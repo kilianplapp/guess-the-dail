@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guess the Dáil — Can you tell an Irish TD's party from their face?</title>
+  <meta name="description" content="An Irish political face-guessing game. Test yourself against 150+ real TD photos and see whether you can pick Fianna Fáil, Fine Gael, Sinn Féin, Labour or the Social Democrats on sight alone.">
+  <meta name="keywords" content="Irish politics, Dáil, TD, political face guessing, Fianna Fáil, Fine Gael, Sinn Féin, Labour, Social Democrats, political game">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="canonical" href="https://guessthedail.ie/">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇪</text></svg>">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Guess the Dáil">
+  <meta property="og:title" content="Guess the Dáil — Can you tell an Irish TD's party from their face?">
+  <meta property="og:description" content="150+ Irish TD photos. Can you pick Fianna Fáil from Fine Gael on sight alone?">
+  <meta property="og:url" content="https://guessthedail.ie/">
+  <meta property="og:locale" content="en_IE">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Guess the Dáil — Can you tell an Irish TD's party from their face?">
+  <meta name="twitter:description" content="150+ Irish TD photos. Can you pick Fianna Fáil from Fine Gael on sight alone?">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Game",
+    "name": "Guess the Dáil",
+    "description": "An Irish political face-guessing game across 150+ real TD photos and the five main Dáil parties.",
+    "url": "https://guessthedail.ie/",
+    "inLanguage": "en-IE",
+    "genre": "Political quiz",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any (web browser)",
+    "isAccessibleForFree": true
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <a href="./">Guess the Dáil</a>
+      <span class="header-sep">·</span>
+      <a class="header-stats-link" href="stats.html">stats</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="stat-label">Score</span><span class="stat-value" id="score-value">0 / 0</span></div>
+      <div class="stat"><span class="stat-label">Streak</span><span class="stat-value" id="streak-value">0</span></div>
+      <div class="stat"><span class="stat-label">Best</span><span class="stat-value" id="best-value">0</span></div>
+      <button class="reset-btn" id="reset" title="Reset stats and history">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card" id="card">
+      <div class="photo-wrap">
+        <img id="photo-a" class="photo active" alt="TD photo">
+        <img id="photo-b" class="photo" alt="">
+        <div class="reveal" id="reveal">
+          <div class="name" id="name"></div>
+          <div class="actual" id="actual"></div>
+        </div>
+      </div>
+
+      <div class="buttons" id="buttons">
+        <button class="party-btn" data-party="Fianna Fáil"        style="--c:#66BB66">Fianna Fáil</button>
+        <button class="party-btn" data-party="Fine Gael"          style="--c:#6699FF">Fine Gael</button>
+        <button class="party-btn" data-party="Sinn Féin"          style="--c:#326760">Sinn Féin</button>
+        <button class="party-btn" data-party="Labour"             style="--c:#E4003B">Labour</button>
+        <button class="party-btn" data-party="Social Democrats"   style="--c:#752F8C">Soc Dems</button>
+      </div>
+
+      <div class="countdown" id="countdown"></div>
+    </div>
+
+    <p class="status" id="status">Loading TDs...</p>
+
+    <section class="history" id="history-section" hidden>
+      <h2>Recent guesses</h2>
+      <ul class="history-list" id="history-list"></ul>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="game.js"></script>
+
+  <footer class="site-footer">
+    Made with data from
+    <a href="https://www.oireachtas.ie/en/members/" target="_blank" rel="noopener">Oireachtas.ie</a>
+  </footer>
+</body>
+</html>

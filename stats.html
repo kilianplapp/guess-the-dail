@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live stats · Guess the Dáil — Irish TD face-recognition data</title>
+  <meta name="description" content="Live data from guessing Irish TD party affiliations. Per-party recognition rates, confusion matrix, easiest and hardest TDs to identify. Updates live.">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="canonical" href="https://guessthedail.ie/stats.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Guess the Dáil">
+  <meta property="og:title" content="Live stats · Guess the Dáil">
+  <meta property="og:description" content="Live Irish TD face-recognition data. Per-party rates, confusion matrix, easiest and hardest TDs to identify.">
+  <meta property="og:url" content="https://guessthedail.ie/stats.html">
+  <meta property="og:locale" content="en_IE">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Live stats · Guess the Dáil">
+  <meta name="twitter:description" content="Live Irish TD face-recognition data. Per-party rates, confusion matrix.">
+
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .stats-page body { padding: 0; }
+    .stats-page header { padding: 0.85rem 1.25rem; }
+
+    .brand a {
+      color: var(--ink); text-decoration: none; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em;
+    }
+    .brand a:hover { color: var(--muted); }
+    .header-sep { color: var(--line); margin: 0 0.25rem; user-select: none; }
+    .header-stats-link {
+      font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 600;
+    }
+    .header-stats-link:hover { color: var(--ink); }
+
+    .stats-page main { max-width: 920px; margin: 0 auto; padding: 1rem 1rem 6rem; }
+
+    .hero { padding: 1.5rem 0 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1.75rem; }
+    .live-tag {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--muted); font-weight: 700; margin-bottom: 0.75rem;
+    }
+    .live-tag::before {
+      content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: #16a34a; box-shadow: 0 0 0 0 rgba(22,163,74,0.4);
+      animation: live-pulse 1.8s infinite;
+    }
+    @keyframes live-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(22,163,74,0.45); }
+      70%  { box-shadow: 0 0 0 10px rgba(22,163,74,0); }
+      100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); }
+    }
+    .hero h1 {
+      font-size: clamp(1.6rem, 5vw, 2.3rem); line-height: 1.1; letter-spacing: -0.02em;
+      margin: 0 0 0.3rem; font-weight: 800;
+    }
+    .hero .lede { color: var(--muted); font-size: 1.05rem; margin: 0 0 0.4rem; }
+    .hero .lede strong { color: var(--ink); font-weight: 700; }
+    .hero .updated { color: var(--muted); font-size: 0.78rem; margin: 0; }
+
+    .kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .kpi {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 0.85rem 1rem;
+    }
+    .kpi-label {
+      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); font-weight: 700;
+    }
+    .kpi-value {
+      font-size: 1.85rem; font-weight: 800; margin-top: 0.3rem;
+      font-variant-numeric: tabular-nums; letter-spacing: -0.015em;
+    }
+    .kpi-sub { font-size: 0.7rem; color: #999; margin-top: 0.1rem; }
+
+    section { margin: 1.75rem 0; }
+    section h2 {
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.75rem;
+    }
+    section h2 .h2-sub {
+      text-transform: none; font-weight: 400; color: #b3b3bb;
+      margin-left: 0.5rem; letter-spacing: 0; font-size: 0.85rem;
+    }
+    .panel {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 1rem 1.2rem;
+    }
+
+    .bar-row {
+      display: grid; grid-template-columns: 130px 70px 1fr 60px;
+      align-items: center; gap: 0.6rem; padding: 0.45rem 0;
+    }
+    .bar-row + .bar-row { border-top: 1px solid #f0f0f3; }
+    .bar-label {
+      font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .bar-label .swatch {
+      display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0;
+    }
+    .bar-n { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+    .bar-track { background: #f0f0f3; height: 9px; border-radius: 99px; overflow: hidden; position: relative; }
+    .bar-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+    .bar-pct { font-weight: 800; font-size: 0.95rem; font-variant-numeric: tabular-nums; text-align: right; }
+    .random-marker {
+      position: absolute; top: -3px; bottom: -3px; width: 1px;
+      background: rgba(0,0,0,0.2); z-index: 1; left: 20%;
+    }
+    .random-marker::after {
+      content: "random 20%"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+      font-size: 0.6rem; color: var(--muted); white-space: nowrap; font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .cm { display: grid; grid-template-columns: 130px repeat(5, 1fr); gap: 4px; font-variant-numeric: tabular-nums; }
+    .cm .cm-corner {}
+    .cm .cm-col-header {
+      text-align: center; font-size: 0.7rem; font-weight: 800; padding: 0.3rem 0; word-break: break-word;
+    }
+    .cm .cm-row-label {
+      text-align: right; padding: 0.55rem 0.7rem 0.55rem 0; font-weight: 700; font-size: 0.82rem;
+    }
+    .cm .cm-cell {
+      text-align: center; padding: 0.55rem 0.3rem; border-radius: 6px;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .cm .cm-cell.diag {
+      box-shadow: inset 0 0 0 2px rgba(22,163,74,0.55);
+      background: rgba(22,163,74,0.15);
+      font-weight: 800;
+    }
+
+    .party-block { margin-bottom: 1rem; }
+    .party-title {
+      display: flex; align-items: center; gap: 0.55rem;
+      font-size: 1rem; font-weight: 800; letter-spacing: -0.01em;
+      margin: 0 0 0.5rem;
+    }
+    .party-title .swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+    .ct {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    }
+    .ct ol { list-style: none; counter-reset: rk; margin: 0; padding: 0; }
+    .ct li {
+      counter-increment: rk;
+      display: grid; grid-template-columns: 18px 44px 1fr auto;
+      align-items: center; gap: 0.6rem;
+      padding: 0.55rem 0.85rem;
+      border-top: 1px solid #f0f0f3;
+      font-size: 0.92rem;
+    }
+    .ct li:first-child { border-top: 0; }
+    .ct li::before {
+      content: counter(rk); color: var(--muted);
+      font-variant-numeric: tabular-nums; font-size: 0.75rem; font-weight: 700;
+      align-self: center;
+    }
+    .ct .thumb {
+      width: 44px; height: 44px; border-radius: 50%;
+      object-fit: cover; background: #ececef;
+      display: block;
+    }
+    .ct .name-meta { display: flex; flex-direction: column; min-width: 0; }
+    .ct .name {
+      font-weight: 600; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ct .meta {
+      color: var(--muted); font-size: 0.72rem; margin-top: 1px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ct .pct {
+      font-variant-numeric: tabular-nums; font-weight: 800; font-size: 0.95rem; letter-spacing: -0.01em;
+    }
+
+    .setup-msg {
+      background: #fef3c7; border: 1px solid #f59e0b; color: #92400e;
+      padding: 1rem 1.2rem; border-radius: 10px; font-size: 0.9rem; line-height: 1.5;
+      margin: 1rem 0;
+    }
+    .setup-msg code { background: rgba(0,0,0,0.06); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85rem; }
+
+    .error-msg {
+      background: #fee; border: 1px solid #fbb; color: #900;
+      padding: 0.7rem 0.9rem; border-radius: 8px; font-size: 0.85rem;
+      margin: 1rem 0;
+    }
+    .loading { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
+
+    .search-panel { margin-top: 2rem; }
+    .search-panel h2 { margin-bottom: 0.5rem; }
+    .search-panel input {
+      width: 100%; padding: 0.7rem 0.9rem;
+      border: 1px solid var(--line); border-radius: 8px;
+      font-size: 0.95rem; font-family: inherit;
+      background: #fafafd; color: var(--ink);
+      box-sizing: border-box; margin-bottom: 0.5rem;
+    }
+    .search-panel input:focus { outline: none; border-color: #0a0a0a; background: #fff; }
+    .search-results { max-height: 300px; overflow-y: auto; }
+    .search-item {
+      display: grid; grid-template-columns: 36px 1fr auto;
+      gap: 0.6rem; align-items: center;
+      padding: 0.5rem 0.4rem; border-radius: 6px;
+      cursor: pointer;
+    }
+    .search-item:hover { background: #f0f0f3; }
+    .search-item img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #ececef; }
+    .search-item .sn { font-weight: 600; font-size: 0.9rem; }
+    .search-item .sp { font-size: 0.72rem; color: var(--muted); }
+    .search-item .sv { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .nav-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 0.5rem; flex-wrap: wrap;
+    }
+    .nav-row a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+    .nav-row a:hover { color: var(--ink); }
+    .nav-row a.active { color: var(--ink); }
+
+    @media (max-width: 580px) {
+      .bar-row { grid-template-columns: 100px 50px 1fr 45px; gap: 0.4rem; font-size: 0.85rem; }
+      .bar-label { font-size: 0.82rem; }
+      .bar-n { font-size: 0.72rem; }
+      .bar-pct { font-size: 0.85rem; }
+      .cm { grid-template-columns: 90px repeat(5, 1fr); }
+      .cm .cm-row-label { font-size: 0.72rem; padding-right: 0.4rem; }
+      .cm .cm-col-header { font-size: 0.62rem; padding: 0.25rem 0; }
+      .cm .cm-cell { font-size: 0.72rem; padding: 0.45rem 0.2rem; }
+    }
+  </style>
+</head>
+<body class="stats-page">
+  <header>
+    <div class="brand">
+      <a href="./">Guess the Dáil</a>
+    </div>
+    <div class="nav-row">
+      <a href="./">Play</a>
+      <a href="stats.html" class="active">Stats</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="live-tag">Live</div>
+      <h1>How well can people guess<br>an Irish TD's party from their face?</h1>
+      <p class="lede">Data from <strong id="hero-total">—</strong> guesses across <strong id="hero-sessions">—</strong> players.</p>
+      <p class="updated" id="hero-updated"></p>
+    </div>
+
+    <div id="setup-warning" hidden>
+      <div class="setup-msg">
+        <strong>Supabase not configured.</strong><br>
+        To enable global stats, create a free Supabase project at
+        <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>,
+        run the SQL in <code>supabase-setup.sql</code>, and update <code>config.js</code>
+        with your project URL and anon key.
+      </div>
+    </div>
+    <div id="error-msg" class="error-msg" hidden></div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Total guesses</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub">all-time</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Players</div>
+        <div class="kpi-value" id="kpi-sessions">—</div>
+        <div class="kpi-sub">unique sessions</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Avg accuracy</div>
+        <div class="kpi-value" id="kpi-accuracy">—</div>
+        <div class="kpi-sub">all guesses</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Avg time</div>
+        <div class="kpi-value" id="kpi-time">—</div>
+        <div class="kpi-sub">seconds to guess</div>
+      </div>
+    </div>
+
+    <section>
+      <h2>Per-party accuracy <span class="h2-sub">how often each party is correctly identified</span></h2>
+      <div class="panel" id="party-bars"></div>
+    </section>
+
+    <section>
+      <h2>Confusion matrix <span class="h2-sub">actual party → guessed party (%)</span></h2>
+      <div class="panel" id="confusion-matrix"></div>
+    </section>
+
+    <section>
+      <h2>Easiest TDs to identify <span class="h2-sub">highest correct-guess rate, per party (min. 5 guesses)</span></h2>
+      <div id="easiest"></div>
+    </section>
+
+    <section>
+      <h2>Hardest TDs to identify <span class="h2-sub">lowest correct-guess rate, per party (min. 5 guesses)</span></h2>
+      <div id="hardest"></div>
+    </section>
+
+    <section class="search-panel">
+      <h2>Search for a TD</h2>
+      <input type="text" id="search-input" placeholder="Type a TD's name...">
+      <div class="search-results" id="search-results"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    (function() {
+      var supabase = null;
+      var candidatesData = {};
+      var refreshTimer = null;
+      var REFRESH_MS = 30000;
+
+      // Check Supabase config
+      if (typeof SUPABASE_URL !== "undefined" && typeof SUPABASE_KEY !== "undefined" &&
+          SUPABASE_URL !== "YOUR_SUPABASE_URL" && window.supabase) {
+        try {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {}
+      }
+
+      // Load candidates.json for name/image lookup
+      fetch("candidates.json", { cache: "no-store" })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          data.forEach(function(c) { candidatesData[c.id] = c; });
+        })
+        .catch(function() {});
+
+      var PARTIES = ["Fianna Fáil", "Fine Gael", "Sinn Féin", "Labour", "Social Democrats"];
+      var PARTY_COLORS = {
+        "Fianna Fáil":      "#66BB66",
+        "Fine Gael":        "#6699FF",
+        "Sinn Féin":        "#326760",
+        "Labour":           "#E4003B",
+        "Social Democrats": "#752F8C",
+      };
+
+      if (!supabase) {
+        document.getElementById("setup-warning").hidden = false;
+        document.getElementById("hero-total").textContent = "0";
+        document.getElementById("hero-sessions").textContent = "0";
+        return;
+      }
+
+      function formatNum(n) {
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+        if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+        return String(n);
+      }
+
+      function formatPct(v) { return (v * 100).toFixed(1) + "%"; }
+
+      function renderPartyBars(stats) {
+        var html = "";
+        PARTIES.forEach(function(p) {
+          var s = stats[p] || { total: 0, correct: 0 };
+          var pct = s.total > 0 ? (s.correct / s.total) : 0;
+          html += '<div class="bar-row">';
+          html += '<div class="bar-label"><span class="swatch" style="background:' + (PARTY_COLORS[p] || "#999") + '"></span>' + p + '</div>';
+          html += '<div class="bar-n">' + formatNum(s.total) + '</div>';
+          html += '<div class="bar-track"><div class="bar-fill" style="width:' + (pct * 100) + '%;background:' + (PARTY_COLORS[p] || "#999") + '"></div><div class="random-marker"></div></div>';
+          html += '<div class="bar-pct">' + formatPct(pct) + '</div>';
+          html += '</div>';
+        });
+        document.getElementById("party-bars").innerHTML = html;
+      }
+
+      function renderConfusionMatrix(confusion) {
+        var html = '<div class="cm">';
+        html += '<div class="cm-corner"></div>';
+        PARTIES.forEach(function(p) {
+          html += '<div class="cm-col-header" title="Guessed ' + p + '">' + p.split(" ")[0] + '</div>';
+        });
+        PARTIES.forEach(function(actual) {
+          html += '<div class="cm-row-label">' + actual.split(" ")[0] + '</div>';
+          var row = confusion[actual] || {};
+          var rowTotal = 0;
+          PARTIES.forEach(function(guess) { rowTotal += (row[guess] || 0); });
+          PARTIES.forEach(function(guess) {
+            var cnt = row[guess] || 0;
+            var pct = rowTotal > 0 ? cnt / rowTotal : 0;
+            var diag = actual === guess ? " diag" : "";
+            var intensity = "";
+            if (pct > 0.15) {
+              var alpha = actual === guess ? "0.36" : Math.min(0.3, pct * 0.7).toFixed(2);
+              intensity = ' style="background:' + (PARTY_COLORS[guess] || "#999") + '33"';
+            }
+            html += '<div class="cm-cell' + diag + '"' + intensity + ' title="' + pct.toFixed(1) + '%">' + formatPct(pct) + '</div>';
+          });
+        });
+        html += '</div>';
+        document.getElementById("confusion-matrix").innerHTML = html;
+      }
+
+      function renderCandidates(containerId, candidates, party) {
+        var html = '<div class="party-block">';
+        html += '<div class="party-title"><span class="swatch" style="background:' + (PARTY_COLORS[party] || "#999") + '"></span>' + party + '</div>';
+        html += '<div class="ct"><ol>';
+        candidates.forEach(function(c) {
+          var info = candidatesData[c.candidate_id] || {};
+          html += '<li>';
+          html += '<img class="thumb" src="' + (info.image_src || "") + '" alt="" loading="lazy">';
+          html += '<div class="name-meta"><div class="name">' + (info.name || c.candidate_id) + '</div><div class="meta">' + c.total + ' guesses</div></div>';
+          html += '<div class="pct">' + formatPct(c.accuracy) + '</div>';
+          html += '</li>';
+        });
+        html += '</ol></div></div>';
+        document.getElementById(containerId).innerHTML += html;
+      }
+
+      function loadStats() {
+        if (!supabase) return;
+
+        // Get total counts
+        supabase.from("guesses").select("*", { count: "exact", head: true }).then(function(r) {
+          if (!r.error) {
+            document.getElementById("hero-total").textContent = formatNum(r.count);
+            document.getElementById("kpi-total").textContent = formatNum(r.count);
+          }
+        });
+
+        // Get unique sessions
+        supabase.rpc("count_unique_sessions").then(function(r) {
+          if (!r.error && r.data != null) {
+            document.getElementById("hero-sessions").textContent = formatNum(r.data);
+            document.getElementById("kpi-sessions").textContent = formatNum(r.data);
+          }
+        });
+
+        // Get overall accuracy
+        supabase.rpc("overall_accuracy").then(function(r) {
+          if (!r.error && r.data != null) {
+            document.getElementById("kpi-accuracy").textContent = formatPct(r.data);
+          }
+        });
+
+        // Get avg time
+        supabase.rpc("avg_guess_time").then(function(r) {
+          if (!r.error && r.data != null) {
+            document.getElementById("kpi-time").textContent = (r.data / 1000).toFixed(1) + "s";
+          }
+        });
+
+        // Per-party stats (including confusion matrix)
+        var partyStats = {};
+        supabase.from("guesses").select("actual_party, guessed_party").limit(100000).then(function(r) {
+          if (!r.error && r.data) {
+            r.data.forEach(function(row) {
+              if (!partyStats[row.actual_party]) partyStats[row.actual_party] = { total: 0, correct: 0, confusion: {} };
+              partyStats[row.actual_party].total++;
+              if (row.actual_party === row.guessed_party) partyStats[row.actual_party].correct++;
+              if (!partyStats[row.actual_party].confusion[row.guessed_party]) partyStats[row.actual_party].confusion[row.guessed_party] = 0;
+              partyStats[row.actual_party].confusion[row.guessed_party]++;
+            });
+
+            PARTIES.forEach(function(p) {
+              if (!partyStats[p]) partyStats[p] = { total: 0, correct: 0, confusion: {} };
+            });
+
+            renderPartyBars(partyStats);
+
+            var confusion = {};
+            PARTIES.forEach(function(p) { confusion[p] = partyStats[p].confusion; });
+            renderConfusionMatrix(confusion);
+          }
+        });
+
+        // Easiest + hardest candidates per party
+        supabase.rpc("candidate_stats_by_party").then(function(r) {
+          if (!r.error && r.data) {
+            var byParty = {};
+            r.data.forEach(function(row) {
+              if (!byParty[row.actual_party]) byParty[row.actual_party] = [];
+              byParty[row.actual_party].push(row);
+            });
+
+            document.getElementById("easiest").innerHTML = "";
+            document.getElementById("hardest").innerHTML = "";
+
+            PARTIES.forEach(function(party) {
+              var list = byParty[party] || [];
+              list.sort(function(a, b) { return b.accuracy - a.accuracy; });
+              var eligible = list.filter(function(c) { return c.total >= 5; });
+              var easiest = eligible.slice(0, 5);
+              var hardest = eligible.slice(-5).reverse();
+
+              if (easiest.length) renderCandidates("easiest", easiest, party);
+              if (hardest.length) renderCandidates("hardest", hardest, party);
+            });
+          }
+        });
+
+        document.getElementById("hero-updated").textContent = "Updated just now";
+      }
+
+      // Candidate search
+      document.getElementById("search-input").addEventListener("input", function() {
+        var q = this.value.trim().toLowerCase();
+        var results = document.getElementById("search-results");
+        if (!supabase || q.length < 2) { results.innerHTML = ""; return; }
+
+        var matching = [];
+        Object.keys(candidatesData).forEach(function(id) {
+          var c = candidatesData[id];
+          if (c.name && c.name.toLowerCase().includes(q)) matching.push({ id: id, name: c.name, image: c.image_src, party: c.party });
+        });
+
+        matching.slice(0, 15).forEach(function(m) {
+          supabase.from("guesses").select("candidate_id", { count: "exact", head: true })
+            .eq("candidate_id", m.id)
+            .then(function(r) {
+              m.total = r.count || 0;
+            });
+        });
+
+        setTimeout(function() {
+          var html = "";
+          matching.slice(0, 15).forEach(function(m) {
+            html += '<div class="search-item">';
+            html += '<img src="' + (m.image || "") + '" alt="" loading="lazy">';
+            html += '<div><div class="sn">' + m.name + '</div><div class="sp">' + m.party + '</div></div>';
+            html += '<div class="sv">' + (m.total || 0) + ' guesses</div>';
+            html += '</div>';
+          });
+          if (!html) html = '<div class="loading">No matches</div>';
+          results.innerHTML = html;
+        }, 300);
+      });
+
+      loadStats();
+      refreshTimer = setInterval(loadStats, REFRESH_MS);
+    })();
+  </script>
+
+  <footer class="site-footer">
+    Made with data from
+    <a href="https://www.oireachtas.ie/en/members/" target="_blank" rel="noopener">Oireachtas.ie</a>
+    — stats powered by
+    <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>
+  </footer>
+</body>
+</html>
